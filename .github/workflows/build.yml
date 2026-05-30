@@ -1,0 +1,22 @@
+name: Build
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build (Linux)
+        if: runner.os == 'Linux'
+        run: make
+
+      - name: Build (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: make

@@ -1,0 +1,59 @@
+# Сценарий 3: Двойной отказ (Dual Fault Scenario)
+# Цель: проверка поведения системы при последовательных отказах
+# без полного восстановления между ними.
+# Ожидаемое поведение: после первого Reset → STARTING,
+# второй отказ прерывает запуск → снова FAULT_PHYS.
+# Формат: время_с,параметр,значение
+
+# --- Начальные условия: крейсерский полёт ---
+0.0,pwr_28v,1
+0.0,pwr_115v,1
+0.0,apu_avail,0
+0.0,engine_running,1
+0.0,eng_bleed_pressure,3.0
+0.0,eng_bleed_temp,200.0
+0.0,ram_air_temp,-50.0
+0.0,ram_air_pressure,0.265
+0.0,pack_switch,1
+0.0,cabin_temp_setpoint,22.0
+0.0,cabin_temp_initial,10.0
+0.0,cabin_press_setpoint,0.753
+0.0,inject_valve_jam,0
+0.0,inject_line_break,0
+0.0,inject_press_loss,0
+0.0,inject_ch_fault,0
+
+# --- t=20 с: система вышла на NORMAL ---
+
+# --- t=200 с: ОТКАЗ 1 — заклинивание пак-клапана ---
+200.0,inject_valve_jam,1
+
+# --- t=233 с: попытка Reset до устранения причины (не поможет: отказ не снят) ---
+233.0,reset_cmd,1
+237.0,reset_cmd,0
+
+# --- t=283 с: устраняем клапан, делаем Reset ---
+283.0,inject_valve_jam,0
+287.0,reset_cmd,1
+290.0,reset_cmd,0
+
+# --- t=350 с: пока идёт STARTING — вводим ОТКАЗ 2 — разгерметизация ---
+350.0,inject_press_loss,1
+
+# --- t=393 с: устраняем разгерметизацию, сброс ---
+393.0,inject_press_loss,0
+397.0,reset_cmd,1
+400.0,reset_cmd,0
+
+# --- t=533 с: нормальная работа, меняем уставки ---
+533.0,cabin_temp_setpoint,24.0
+533.0,cabin_press_setpoint,0.780
+
+# --- t=667 с: снижение, параметры атмосферы меняются ---
+667.0,ram_air_temp,-10.0
+667.0,ram_air_pressure,0.7
+
+# --- t=867 с: посадка ---
+867.0,ram_air_temp,15.0
+867.0,ram_air_pressure,1.0
+900.0,pack_switch,0

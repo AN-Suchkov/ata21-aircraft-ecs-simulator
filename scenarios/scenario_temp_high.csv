@@ -1,0 +1,52 @@
+# Сценарий 12: Перегрев за конденсатором (FAULT_TEMP_HIGH)
+#
+# Цель: проверить обнаружение перегрева за конденсатором ТХУ.
+# Механизм: inject_temp_high=1 форсирует ps->t_after_cond = 70°C (выше порога 60°C).
+#   КУ обнаруживает FAULT_TEMP_HIGH через 2 с → оба канала → FAULT_PHYS.
+#
+# Ожидаемое поведение:
+#   t=0..60с   — нормальный крейсерский полёт
+#   t=60с      — inject_temp_high=1 → t_after_cond=70°C
+#   t=62с+     — fault_flags = 0x0008 (FAULT_TEMP_HIGH), CU → FAULT_PHYS
+#               — pack закрывается (fail-safe), вентилятор на 0.3
+#   t=90с      — inject_temp_high=0 (перегрев устранён), reset → возврат
+#   t=120с+    — система в NORMAL, нормальная работа
+#
+# Формат: время_с,параметр,значение
+
+# --- Начальные условия: крейсерский полёт ---
+0.0,pwr_28v,1
+0.0,pwr_115v,1
+0.0,apu_avail,0
+0.0,engine_running,1
+0.0,eng_bleed_pressure,3.0
+0.0,eng_bleed_temp,200.0
+0.0,ram_air_temp,-50.0
+0.0,ram_air_pressure,0.265
+0.0,pack_switch,1
+0.0,cabin_temp_setpoint,22.0
+0.0,cabin_temp_initial,10.0
+0.0,cabin_press_setpoint,0.753
+0.0,inject_valve_jam,0
+0.0,inject_line_break,0
+0.0,inject_press_loss,0
+0.0,inject_ch_fault,0
+0.0,inject_temp_high,0
+
+# --- t=200 с: инжекция перегрева конденсатора (имитирует отказ охлаждения ТХУ) ---
+200.0,inject_temp_high,1
+
+# --- t=300 с: устраняем перегрев, сбрасываем КУ ---
+300.0,inject_temp_high,0
+303.0,reset_cmd,1
+307.0,reset_cmd,0
+
+# --- t=433 с: контроль восстановления ---
+433.0,cabin_temp_setpoint,21.0
+
+# --- t=667 с: изменяем условия ---
+667.0,ram_air_temp,-30.0
+667.0,ram_air_pressure,0.4
+
+# --- t=833 с: выключение ---
+833.0,pack_switch,0

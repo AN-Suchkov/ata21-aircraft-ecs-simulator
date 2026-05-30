@@ -1,0 +1,19 @@
+# Build artifacts
+*.o
+skv_sim_21
+skv_sim_21.exe
+
+# Generated log outputs (logs/ directory is tracked via .gitkeep)
+logs/*.csv
+
+# Archives and temp
+*.rar
+_tmp_docx/
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+Thumbs.db
+.DS_Store

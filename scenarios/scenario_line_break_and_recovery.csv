@@ -1,0 +1,33 @@
+# Сценарий 9: Обрыв магистрали отбора воздуха от двигателя
+# Ожидание: при inject_line_break=1 давление падает, расход обнуляется,
+# включается FAULT_LINE_BREAK, CU переходит в FAULT_PHYS.
+# После устранения и сброса — возврат.
+
+0.0,pwr_28v,1
+0.0,pwr_115v,1
+0.0,apu_avail,0
+0.0,engine_running,1
+0.0,eng_bleed_pressure,3.0
+0.0,eng_bleed_temp,200.0
+0.0,ram_air_temp,-45.0
+0.0,ram_air_pressure,0.265
+0.0,pack_switch,1
+0.0,cabin_temp_setpoint,22.0
+0.0,cabin_temp_initial,10.0
+
+# Устойчивый полёт
+100.0,cabin_temp_setpoint,22.0
+
+# Обрыв магистрали
+200.0,inject_line_break,1
+
+# Система в FAULT_PHYS, ждём
+# Устраняем обрыв
+300.0,inject_line_break,0
+# Сброс
+303.0,reset_cmd,1
+307.0,reset_cmd,0
+
+# Нормализация
+500.0,cabin_temp_setpoint,24.0
+833.0,pack_switch,0

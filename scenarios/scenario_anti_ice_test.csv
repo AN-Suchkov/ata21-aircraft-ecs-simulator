@@ -1,0 +1,39 @@
+# Сценарий 6: Активация ПОС конденсатора (Anti-Ice)
+# Ожидание: около t=70 с air_temp опускается ниже -40°C → выход пака охлаждается,
+# и при t_after_turbine < 2°C включается anti_ice_valve_cmd=1.
+# При t=120 с подогрев рампой должен выключить ПОС.
+
+0.0,pwr_28v,1
+0.0,pwr_115v,1
+0.0,apu_avail,0
+0.0,engine_running,1
+0.0,eng_bleed_pressure,3.0
+0.0,eng_bleed_temp,200.0
+0.0,ram_air_temp,15.0
+0.0,ram_air_pressure,1.013
+0.0,pack_switch,0
+0.0,cabin_temp_setpoint,22.0
+0.0,cabin_temp_initial,10.0
+0.0,cabin_press_setpoint,0.753
+
+# Включаем пак на земле, нормальная работа
+17.0,pack_switch,1
+
+# Плавное снижение забортной температуры до -50°C (имитация набора высоты)
+100.0,ram_air_temp,-10.0
+133.0,ram_air_temp,-25.0
+167.0,ram_air_temp,-35.0
+200.0,ram_air_temp,-45.0
+233.0,ram_air_temp,-55.0
+267.0,ram_air_pressure,0.265
+
+# Ждём, пока сработает ПОС (логируем anti_ice_cmd)
+# Обычно включается при t_pack_out < 2°C, это должно произойти в районе 267-333 с
+
+# Затем прогреваем забортный воздух (снижение) и проверяем выключение ПОС
+500.0,ram_air_temp,-10.0
+533.0,ram_air_temp,5.0
+567.0,ram_air_pressure,0.8
+
+# Оставляем работать до конца
+833.0,pack_switch,0

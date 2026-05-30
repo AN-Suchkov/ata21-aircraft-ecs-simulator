@@ -1,0 +1,75 @@
+# Сценарий 11: Рассогласование каналов КУ (FAULT_CH_DISAGR)
+#
+# Цель: проверить детектор рассогласования и защёлку FAULT_CH_DISAGR.
+#
+# Механизм (2 фазы):
+#   Фаза 1 — inject_ch_fault: канал A уходит в FAULT_CU напрямую.
+#     Канал B становится активным и продолжает работать (накапливает интеграторы).
+#   Фаза 2 — восстановление A с нулевыми интеграторами:
+#     После reset A начинает STARTING → NORMAL со сброшенными PID-состояниями.
+#     В момент выхода в NORMAL команды A (integral=0) и B (integral≈1.88)
+#     расходятся по outflow_valve > CHAN_DIFF_THRESH (0.15):
+#       ofv_A = 1 - 1.5·err ≈ 0.95  (нет интегральной части)
+#       ofv_B = 1 - 1.5·err - 0.1·1.88 ≈ 0.78
+#       |0.95 - 0.78| = 0.17 > 0.15 → FAULT_CH_DISAGR
+#     Оба канала → FAULT_CU; fault_flags = 0x0010 (FAULT_CH_DISAGR).
+#     disagr_latched сохраняет флаг до reset_cmd.
+#
+# Ожидаемое поведение:
+#   t=0..35с    — оба канала STARTING → NORMAL (active_ch=0)
+#   t=70с       — inject_ch_fault=1 → A→FAULT_CU, B→active (active_ch=1)
+#   t=80с       — reset_cmd=1 → A восстанавливается: RESET→IDLE→STARTING
+#   t=110с      — A→NORMAL: рассогласование обнаружено
+#               → fault_flags=0x0010, оба→FAULT_CU, active_ch=-1 (fail-safe)
+#   t=120с      — reset_cmd=1 → оба восстанавливаются одновременно
+#               → disagr_latched сбрасывается, fault_flags=0x0000
+#   t=150с      — оба в NORMAL, A снова активен (active_ch=0)
+#
+# Формат: время_с,параметр,значение
+
+# --- Начальные условия: крейсерский полёт, пак включён сразу ---
+0.0,pwr_28v,1
+0.0,pwr_115v,1
+0.0,apu_avail,0
+0.0,engine_running,1
+0.0,eng_bleed_pressure,3.0
+0.0,eng_bleed_temp,200.0
+0.0,ram_air_temp,-50.0
+0.0,ram_air_pressure,0.265
+0.0,pack_switch,1
+0.0,cabin_temp_setpoint,22.0
+0.0,cabin_temp_initial,10.0
+0.0,cabin_press_setpoint,0.753
+0.0,inject_valve_jam,0
+0.0,inject_line_break,0
+0.0,inject_press_loss,0
+0.0,inject_ch_fault,0
+0.0,inject_temp_high,0
+
+# --- Фаза 1: принудительный отказ канала A ---
+# A → FAULT_CU; B становится активным и накапливает интеграторы PID.
+233.0,inject_ch_fault,1
+250.0,inject_ch_fault,0
+
+# --- Сброс канала A: RESET → IDLE → STARTING (30с) → NORMAL ---
+# Интеграторы A сбрасываются в нулевые значения.
+267.0,reset_cmd,1
+270.0,reset_cmd,0
+
+# --- ~t=110с: A выходит в NORMAL с integral=0, B с integral≈1.88 ---
+# Ожидаемое рассогласование по outflow_valve → FAULT_CH_DISAGR
+
+# --- Сброс обоих каналов после рассогласования ---
+400.0,reset_cmd,1
+403.0,reset_cmd,0
+
+# --- t=160с: оба канала в NORMAL; проверяем уставку ---
+533.0,cabin_temp_setpoint,20.0
+
+# --- t=220с: изменяем условия полёта ---
+733.0,ram_air_temp,-30.0
+733.0,ram_air_pressure,0.4
+733.0,cabin_press_setpoint,0.800
+
+# --- t=270с: выключение ---
+900.0,pack_switch,0

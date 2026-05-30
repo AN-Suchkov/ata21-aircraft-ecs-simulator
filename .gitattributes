@@ -1,0 +1,22 @@
+# Нормализация окончаний строк
+* text=auto
+
+# Исходный код и Makefile — LF везде
+*.c    text eol=lf
+*.h    text eol=lf
+Makefile text eol=lf
+
+# Скрипты — строго LF (CRLF ломает bash на Linux)
+*.sh   text eol=lf
+
+# Windows-скрипты — CRLF
+*.bat  text eol=crlf
+
+# CSV и YAML — LF
+*.csv  text eol=lf
+*.yml  text eol=lf
+
+# Бинарные файлы
+*.docx binary
+*.rar  binary
+*.exe  binary

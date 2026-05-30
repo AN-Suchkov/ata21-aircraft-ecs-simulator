@@ -1,0 +1,62 @@
+# Сценарий 4: Отказ канала A КУ и переключение на канал B
+# Цель: проверить логику резервирования двух каналов контроллера.
+# Ожидаемое поведение:
+#   t=80с  — inject_ch_fault=1 → канал A уходит в FAULT_CU
+#   t=80с  — канал B становится активным (active_ch=1)
+#   t=90с  — inject_ch_fault=0, reset → канал A восстанавливается
+#   t=95с  — оба канала снова в NORMAL, active_ch может вернуться на 0
+
+# --- Начальные условия ---
+0.0,pwr_28v,1
+0.0,pwr_115v,1
+0.0,apu_avail,0
+0.0,engine_running,1
+0.0,eng_bleed_pressure,3.0
+0.0,eng_bleed_temp,200.0
+0.0,ram_air_temp,-45.0
+0.0,ram_air_pressure,0.265
+0.0,pack_switch,1
+0.0,cabin_temp_setpoint,22.0
+0.0,cabin_temp_initial,10.0
+0.0,cabin_press_setpoint,0.753
+0.0,inject_valve_jam,0
+0.0,inject_line_break,0
+0.0,inject_press_loss,0
+0.0,inject_ch_fault,0
+
+# --- t=17 с: включение пака (запуск) ---
+17.0,pack_switch,1
+
+# --- t=40 с: нормальный полёт установился ---
+
+# --- t=267 с: принудительный отказ канала A ---
+# Канал A → FAULT_CU, система переключается на канал B
+267.0,inject_ch_fault,1
+
+# --- t=300 с: отказ устранён, Reset ---
+300.0,inject_ch_fault,0
+303.0,reset_cmd,1
+307.0,reset_cmd,0
+
+# --- t=433 с: смена уставки температуры, проверяем работу от B ---
+433.0,cabin_temp_setpoint,20.0
+
+# --- t=533 с: потеря питания 115В (кратковременная) → оба канала FAULT_CU ---
+533.0,pwr_115v,0
+
+# --- t=540 с: питание восстановлено, Reset ---
+540.0,pwr_115v,1
+543.0,reset_cmd,1
+547.0,reset_cmd,0
+
+# --- t=667 с: изменение условий полёта ---
+667.0,ram_air_temp,-30.0
+667.0,ram_air_pressure,0.4
+667.0,cabin_press_setpoint,0.800
+
+# --- t=867 с: снижение и посадка ---
+867.0,ram_air_temp,10.0
+867.0,ram_air_pressure,0.95
+900.0,engine_running,0
+900.0,apu_avail,1
+933.0,pack_switch,0
